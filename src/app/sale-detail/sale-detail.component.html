@@ -1,0 +1,59 @@
+<div class="container py-4">
+    <h2 class="mb-4">Detalhes da Venda</h2>
+
+    <div *ngIf="error()" class="alert alert-danger d-flex align-items-center">
+        <i class="bi bi-exclamation-circle me-2"></i>
+        {{ error() }}
+    </div>
+
+    <div *ngIf="loading()" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Carregando dados da venda...</p>
+    </div>
+
+    <div *ngIf="sale()" class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">
+                Venda #{{ sale()?.saleNumber }}
+                <span class="badge ms-2" [ngClass]="sale()?.isCancelled ? 'bg-danger' : 'bg-success'">
+                    {{ sale()?.isCancelled ? 'Cancelada' : 'Ativa' }}
+                </span>
+            </h5>
+            <p class="card-text">
+                <strong>Data:</strong> {{ sale()?.saleDate | date: 'short' }}<br />
+                <strong>Cliente:</strong> {{ sale()?.customerName }}<br />
+                <strong>Filial:</strong> {{ sale()?.branchName }}<br />
+                <strong>Total:</strong> {{ sale()?.totalAmount | currency:'BRL' }}
+            </p>
+
+            <hr />
+            <h6>Itens da Venda</h6>
+            <table class="table table-bordered table-sm mt-2">
+                <thead class="table-light">
+                    <tr>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Preço Unit.</th>
+                        <th>Desconto</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let i of sale()?.items">
+                        <td>{{ i.productName }}</td>
+                        <td>{{ i.quantity }}</td>
+                        <td>{{ i.unitPrice | currency:'BRL' }}</td>
+                        <td>{{ i.discount | currency:'BRL' }}</td>
+                        <td>{{ i.totalItemAmount | currency:'BRL' }}</td>
+                        <td>
+                            <span [ngClass]="i.isCancelled ? 'text-danger' : 'text-success'">
+                                {{ i.isCancelled ? 'Cancelado' : 'Ativo' }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

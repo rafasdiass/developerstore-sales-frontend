@@ -1,0 +1,58 @@
+<div class="container py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h2 class="mb-0">
+                <i class="bi bi-diagram-3-fill me-2 text-primary"></i>
+                Filiais Cadastradas
+            </h2>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-sm btn-outline-success" (click)="router.navigate(['/branches/new'])">
+                <i class="bi bi-plus-circle me-1"></i> Nova Filial
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensagem de erro -->
+    <div *ngIf="error" class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div>{{ error }}</div>
+    </div>
+
+    <!-- Carregando -->
+    <div *ngIf="loading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2">Carregando filiais...</p>
+    </div>
+
+    <!-- Nenhuma filial -->
+    <div *ngIf="!loading && branches.length === 0" class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhuma filial cadastrada ainda.
+    </div>
+
+    <!-- Tabela de filiais -->
+    <div class="table-responsive" *ngIf="hasBranches">
+        <table class="table table-striped table-bordered align-middle shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let b of branches">
+                    <td>{{ b.name }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-2" (click)="edit(b.id)" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="delete(b.id)" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

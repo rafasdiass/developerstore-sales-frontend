@@ -1,0 +1,64 @@
+<form (ngSubmit)="submit()" novalidate>
+    <div>
+        <label>Número da venda:</label>
+        <input type="text" [value]="saleNumber()" (input)="onSaleNumberInputEvent($event)" />
+    </div>
+
+    <div>
+        <label>Cliente:</label>
+        <select [value]="customerId()" (change)="onCustomerChangeEvent($event)">
+            <option value="">Selecione</option>
+            <option *ngFor="let c of customers" [value]="c.id">{{ c.name }}</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Filial:</label>
+        <select [value]="branchId()" (change)="onBranchChangeEvent($event)">
+            <option value="">Selecione</option>
+            <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+        </select>
+    </div>
+
+    <div *ngFor="let item of items(); let i = index">
+        <fieldset>
+            <legend>Item {{ i + 1 }}</legend>
+
+            <div>
+                <label>Produto:</label>
+                <select [value]="item.productId" (change)="onProductChange($event, i)">
+                    <option value="">Selecione</option>
+                    <option *ngFor="let p of products" [value]="p.id">{{ p.name }}</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Quantidade:</label>
+                <input type="number" [value]="item.quantity" (input)="onQuantityChange($event, i)" />
+            </div>
+
+            <div>
+                <label>Preço Unitário:</label>
+                <input type="number" step="0.01" [value]="item.unitPrice" (input)="onUnitPriceChange($event, i)" />
+            </div>
+
+            <div>
+                <label>Desconto:</label>
+                <input type="number" [value]="item.discount" disabled />
+            </div>
+
+            <div>
+                <label>Total do Item:</label>
+                <input type="number" [value]="item.totalItemAmount" disabled />
+            </div>
+
+            <button type="button" (click)="removeItem(i)">Remover</button>
+        </fieldset>
+    </div>
+
+    <button type="button" (click)="addItem()">Selecionar Item</button>
+
+    <div *ngIf="error()">{{ error() }}</div>
+
+    <button type="submit" [disabled]="!canSubmit() || submitting()">Salvar</button>
+</form>
