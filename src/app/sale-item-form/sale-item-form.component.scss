@@ -1,12 +1,77 @@
+/* src/app/sale-item-form/sale-item-form.component.scss */
 
+/* Host wrapper para garantir bloco e 100% de largura */
+:host {
+    display: block;
+    width: 100%;
+}
+
+/* Ajustes gerais do card */
 .card {
-    border-left: 4px solid #0d6efd; 
+    margin-bottom: 1rem;
+    /* Espaço entre cards */
+
+    .card-body {
+        padding: 1rem;
+
+        /* Força inputs e selects a ocupar toda a coluna */
+        .form-control,
+        .form-select {
+            width: 100%;
+        }
+    }
 }
 
-.form-label {
-    font-weight: 500;
+/* Layout flexível para a linha de campos */
+.row.g-3.align-items-end {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin: -0.5rem;
+    /* Anula o padding das colunas */
+
+    /* Todo filho direto (.col-*) recebe padding interno */
+    >div[class^="col-"] {
+        padding: 0.5rem;
+        /* Base flexível: mínimo 120px, máximo conforme coluna */
+        flex: 1 1 120px;
+    }
+
+    /* Larguras específicas em desktop */
+    >.col-md-4 {
+        flex: 0 0 30%;
+        max-width: 30%;
+    }
+
+    >.col-md-2 {
+        flex: 0 0 16.6667%;
+        max-width: 16.6667%;
+    }
+
+    /* Tablets (≤992px): duas colunas por linha */
+    @media (max-width: 992px) {
+
+        >.col-md-4,
+        >.col-md-2 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+    }
+
+    /* Celulares (≤576px): uma coluna por linha */
+    @media (max-width: 576px) {
+
+        >.col-md-4,
+        >.col-md-2 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
 }
 
-.bg-light[readonly] {
-    cursor: default;
+/* Botão de remover alinhado à direita, com padding igual às colunas */
+.card .row.mt-3 {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem;
 }

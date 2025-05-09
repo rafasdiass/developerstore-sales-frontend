@@ -1,0 +1,60 @@
+/* src/app/discount-calculator/discount-calculator.component.scss */
+
+/* Envolve todo o componente garantindo bloco e largura total */
+:host {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    /* Espaço interno para destacar do contexto */
+
+    /* Agrupa cada campo do formulário */
+    .form-group {
+        margin-bottom: 0.75rem;
+
+        &.mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            box-sizing: border-box;
+        }
+    }
+
+    /* Espaçamento consistente para mensagens de status */
+    .alert {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.25rem;
+        line-height: 1.4;
+
+        &.alert-info {
+            background-color: #e9f7fd;
+            border: 1px solid #b8e2f2;
+            color: #055160;
+        }
+
+        &.alert-danger {
+            background-color: #fdecea;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        &.alert-success {
+            background-color: #e9f7ec;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+    }
+}
