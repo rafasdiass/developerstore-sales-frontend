@@ -8,12 +8,12 @@ import {
   computed,
   inject,
   effect,
+  WritableSignal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
 import { Product } from '../models/product.model';
-
 import { ProductsService } from '../services/product.service';
 import { DiscountsService } from '../services/discounts.service';
 
@@ -26,7 +26,14 @@ import { DiscountsService } from '../services/discounts.service';
 })
 export class SaleItemFormComponent implements OnInit {
   @Input() index!: number;
-  @Input() item!: CreateSaleItemCommand;
+
+  private _item!: WritableSignal<CreateSaleItemCommand>;
+  @Input() set item(value: CreateSaleItemCommand) {
+    this._item = signal(value);
+  }
+  get item() {
+    return this._item();
+  }
 
   @Output() update = new EventEmitter<{
     index: number;
@@ -46,7 +53,6 @@ export class SaleItemFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Garante que os produtos estejam carregados
     if (this.productsService.products().length === 0) {
       this.productsService.loadAll();
     }
