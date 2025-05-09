@@ -1,26 +1,22 @@
 import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { SaleItemFormComponent } from '../sale-item-form/sale-item-form.component';
+
 import { SalesService } from '../services/sales.service';
 import { BranchesService } from '../services/branches.service';
 import { CustomersService } from '../services/customers.service';
 import { DiscountsService } from '../services/discounts.service';
 import { ProductsService } from '../services/product.service';
+
 import { CreateSaleCommand } from '../models/create-sale-command.model';
 import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
-import { Branch } from '../models/branch.model';
-import { Customer } from '../models/customer.model';
-import { Product } from '../models/product.model';
-
-type LocalSaleItem = CreateSaleItemCommand & {
-  discount: number;
-  totalItemAmount: number;
-};
+import { DiscountResult } from '../models/discount.model';
 
 @Component({
   selector: 'app-sale-form',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SaleItemFormComponent],
   templateUrl: './sale-form.component.html',
   styleUrls: ['./sale-form.component.scss'],
 })
@@ -31,7 +27,12 @@ export class SaleFormComponent implements OnInit {
   readonly customerName = signal('');
   readonly branchId = signal('');
   readonly branchName = signal('');
-  readonly items = signal<LocalSaleItem[]>([]);
+
+  /** itens já com discount e totalItemAmount */
+  readonly items = signal<
+    Array<CreateSaleItemCommand & { discount: number; totalItemAmount: number }>
+  >([]);
+
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -39,27 +40,20 @@ export class SaleFormComponent implements OnInit {
     () =>
       this.saleNumber().trim() !== '' &&
       this.customerId().trim() !== '' &&
-      this.customerName().trim() !== '' &&
       this.branchId().trim() !== '' &&
-      this.branchName().trim() !== '' &&
       this.items().length > 0 &&
-      this.items().every(
-        (item) =>
-          item.productId.trim() !== '' &&
-          item.productName.trim() !== '' &&
-          item.quantity > 0 &&
-          item.unitPrice > 0
-      )
+      this.items().every((it) => it.productId && it.quantity > 0)
   );
 
   constructor(
-    private readonly salesService: SalesService,
-    private readonly branchesService: BranchesService,
-    private readonly customersService: CustomersService,
-    private readonly discountsService: DiscountsService,
-    private readonly productsService: ProductsService,
-    private readonly router: Router
+    private salesService: SalesService,
+    private branchesService: BranchesService,
+    private customersService: CustomersService,
+    private productsService: ProductsService,
+    private discountsService: DiscountsService,
+    private router: Router
   ) {
+    // quando terminar de submeter, redireciona ou mostra erro
     effect(() => {
       if (this.submitting() && !this.salesService.loading()) {
         const err = this.salesService.error();
@@ -79,40 +73,18 @@ export class SaleFormComponent implements OnInit {
     this.productsService.loadAll();
   }
 
-  get branches(): Branch[] {
+  // helpers para template
+  get branches() {
     return this.branchesService.list();
   }
-
-  get customers(): Customer[] {
+  get customers() {
     return this.customersService.list();
   }
 
-  get products(): Product[] {
-    return this.productsService.products();
-  }
-
-  onSaleNumberInputEvent(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.saleNumber.set(input.value);
-  }
-
-  onCustomerChangeEvent(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    this.customerId.set(select.value);
-    const cust = this.customers.find((c) => c.id === select.value);
-    this.customerName.set(cust?.name ?? '');
-  }
-
-  onBranchChangeEvent(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    this.branchId.set(select.value);
-    const branch = this.branches.find((b) => b.id === select.value);
-    this.branchName.set(branch?.name ?? '');
-  }
-
+  /** adiciona linha em branco */
   addItem() {
-    this.items.update((items) => [
-      ...items,
+    this.items.update((list) => [
+      ...list,
       {
         productId: '',
         productName: '',
@@ -124,57 +96,59 @@ export class SaleFormComponent implements OnInit {
     ]);
   }
 
-  removeItem(index: number) {
-    this.items.update((items) => items.filter((_, i) => i !== index));
+  /** remove linha */
+  removeItem(idx: number) {
+    this.items.update((list) => list.filter((_, i) => i !== idx));
   }
 
-  updateItem(index: number, partial: Partial<LocalSaleItem>) {
-    const updated = [...this.items()];
-    updated[index] = { ...updated[index], ...partial };
-    const item = updated[index];
+  /**
+   * recebe do filho {index, partial}, aplica no array, chama backend p/ desconto e atualiza
+   */
+  updateItem(event: {
+    index: number;
+    partial: Partial<CreateSaleItemCommand>;
+  }) {
+    // passo 1: funde partial
+    this.items.update((list) => {
+      const clone = [...list];
+      Object.assign(clone[event.index], event.partial);
+      return clone;
+    });
 
-    this.items.set(updated);
-
-    if (item.quantity > 0 && item.unitPrice > 0) {
-      this.discountsService.calculate(item.quantity, item.unitPrice);
-
-      effect(() => {
-        const result = this.discountsService.result();
-        if (result) {
-          const reUpdated = [...this.items()];
-          reUpdated[index].discount = result.discount;
-          reUpdated[index].totalItemAmount = result.totalPrice;
-          this.items.set(reUpdated);
-        }
-      });
-    }
-  }
-
-  onProductChange(event: Event, index: number) {
-    const select = event.target as HTMLSelectElement;
-    const productId = select.value;
-    const product = this.products.find((p) => p.id === productId);
-    this.updateItem(index, {
-      productId,
-      productName: product?.name ?? '',
+    // passo 2: disparar cálculo remoto
+    const it = this.items()[event.index];
+    this.discountsService.calculate(it.quantity, it.unitPrice).subscribe({
+      next: (res: DiscountResult) => {
+        this.items.update((list) => {
+          const c = [...list];
+          c[event.index] = {
+            ...c[event.index],
+            discount: res.discount,
+            totalItemAmount: res.totalPrice,
+          };
+          return c;
+        });
+      },
+      error: () => {
+        // em caso de erro, zera desconto e total = qty * unitPrice
+        this.items.update((list) => {
+          const c = [...list];
+          const base = c[event.index];
+          c[event.index] = {
+            ...base,
+            discount: 0,
+            totalItemAmount:
+              Math.round(base.quantity * base.unitPrice * 100) / 100,
+          };
+          return c;
+        });
+      },
     });
   }
 
-  onQuantityChange(event: Event, index: number) {
-    const input = event.target as HTMLInputElement;
-    const value = input.valueAsNumber;
-    this.updateItem(index, { quantity: value });
-  }
-
-  onUnitPriceChange(event: Event, index: number) {
-    const input = event.target as HTMLInputElement;
-    const value = input.valueAsNumber;
-    this.updateItem(index, { unitPrice: value });
-  }
-
+  /** envia DTO final para a API */
   submit() {
     if (!this.canSubmit()) return;
-
     this.error.set(null);
     this.submitting.set(true);
 
@@ -185,14 +159,26 @@ export class SaleFormComponent implements OnInit {
       customerName: this.customerName(),
       branchId: this.branchId(),
       branchName: this.branchName(),
-      items: this.items().map((item) => ({
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      })),
+      items: this.items(),
     };
 
     this.salesService.createSale(cmd);
+  }
+ 
+
+  onSaleNumberChange(value: string) {
+    this.saleNumber.set(value);
+  }
+
+  onCustomerChange(id: string) {
+    this.customerId.set(id);
+    const c = this.customers.find((c) => c.id === id);
+    this.customerName.set(c?.name ?? '');
+  }
+
+  onBranchChange(id: string) {
+    this.branchId.set(id);
+    const b = this.branches.find((b) => b.id === id);
+    this.branchName.set(b?.name ?? '');
   }
 }

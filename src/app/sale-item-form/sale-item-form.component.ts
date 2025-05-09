@@ -1,21 +1,7 @@
-import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnInit,
-  signal,
-  computed,
-  inject,
-  effect,
-  WritableSignal,
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
-import { Product } from '../models/product.model';
 import { ProductsService } from '../services/product.service';
-import { DiscountsService } from '../services/discounts.service';
+import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
 
 @Component({
   selector: 'app-sale-item-form',
@@ -24,96 +10,59 @@ import { DiscountsService } from '../services/discounts.service';
   templateUrl: './sale-item-form.component.html',
   styleUrls: ['./sale-item-form.component.scss'],
 })
-export class SaleItemFormComponent implements OnInit {
+export class SaleItemFormComponent {
+  /** índice do item dentro do array do pai */
   @Input() index!: number;
 
-  private _item!: WritableSignal<CreateSaleItemCommand>;
-  @Input() set item(value: CreateSaleItemCommand) {
-    this._item = signal(value);
-  }
-  get item() {
-    return this._item();
-  }
+  /**
+   * item completo
+   * { productId, productName, quantity, unitPrice, discount, totalItemAmount }
+   */
+  @Input() item!: CreateSaleItemCommand & {
+    discount: number;
+    totalItemAmount: number;
+  };
 
-  @Output() update = new EventEmitter<{
+  /** emite { index, partial } quando algo muda */
+  @Output()
+  update = new EventEmitter<{
     index: number;
     partial: Partial<CreateSaleItemCommand>;
   }>();
-  @Output() remove = new EventEmitter<number>();
 
-  private readonly productsService = inject(ProductsService);
-  private readonly discountsService = inject(DiscountsService);
+  /** emite o índice quando remove */
+  @Output()
+  remove = new EventEmitter<number>();
 
-  readonly products = signal<Product[]>([]);
-  readonly discount = signal<number>(0);
+  constructor(public productsService: ProductsService) {}
 
-  readonly totalItemAmount = computed(() => {
-    const total = this.item.quantity * this.item.unitPrice;
-    return total - this.discount();
-  });
-
-  ngOnInit(): void {
-    if (this.productsService.products().length === 0) {
-      this.productsService.loadAll();
-    }
-
-    effect(() => {
-      const loaded = this.productsService.products();
-      if (loaded.length > 0) {
-        this.products.set(loaded);
-      }
-    });
-
-    effect(() => {
-      const product = this.products().find((p) => p.id === this.item.productId);
-      if (product) {
-        this.update.emit({
-          index: this.index,
-          partial: {
-            productName: product.name,
-            unitPrice: product.price,
-          },
-        });
-      }
-    });
-
-    effect(() => {
-      const { quantity, unitPrice } = this.item;
-      if (quantity > 0 && unitPrice > 0) {
-        this.discountsService.calculate(quantity, unitPrice);
-      }
-    });
-
-    effect(() => {
-      const res = this.discountsService.result();
-      if (res) {
-        this.discount.set(res.discount);
-      }
-    });
-  }
-
-  onProductSelect(productId: string) {
+  /** produto selecionado */
+  onProductChange(evt: Event) {
+    const select = evt.target as HTMLSelectElement;
+    const productId = select.value;
+    const prod = this.productsService
+      .products()
+      .find((p) => p.id === productId);
     this.update.emit({
       index: this.index,
-      partial: { productId },
+      partial: {
+        productId,
+        productName: prod?.name ?? '',
+        unitPrice: prod?.price ?? 0,
+      },
     });
   }
 
-  onQuantityInput(value: number) {
+  /** quantidade alterada */
+  onQuantityChange(evt: Event) {
+    const qty = (evt.target as HTMLInputElement).valueAsNumber;
     this.update.emit({
       index: this.index,
-      partial: { quantity: value },
+      partial: { quantity: qty },
     });
   }
 
-  getEventValue(event: Event): string {
-    return (event.target as HTMLSelectElement).value;
-  }
-
-  getEventValueAsNumber(event: Event): number {
-    return (event.target as HTMLInputElement).valueAsNumber;
-  }
-
+  /** remove este item */
   onRemove() {
     this.remove.emit(this.index);
   }
