@@ -122,19 +122,24 @@ export class SaleFormComponent implements OnInit {
     const it = this.items()[event.index];
     this.discountsService.calculate(it.quantity, it.unitPrice).subscribe({
       next: (res: DiscountResult) => {
-        // atualiza com os valores vindos do servidor
+        // **Corrigido**: calculamos totalItemAmount manualmente
         this.items.update((list) => {
           const clone = [...list];
+          const base = clone[event.index];
           clone[event.index] = {
-            ...clone[event.index],
+            ...base,
             discount: res.discount,
-            totalItemAmount: res.totalPrice,
+            totalItemAmount:
+              // quantidade * preço unitário – desconto, arredondado a 2 casas
+              Math.round(
+                (base.quantity * base.unitPrice - res.discount) * 100
+              ) / 100,
           };
           return clone;
         });
       },
       error: () => {
-        // fallback: sem desconto, total = qty * unitPrice
+        // fallback: sem desconto
         this.items.update((list) => {
           const clone = [...list];
           const base = clone[event.index];
@@ -149,7 +154,6 @@ export class SaleFormComponent implements OnInit {
       },
     });
   }
-
   /** envia DTO final para a API */
   submit(): void {
     if (!this.canSubmit()) return;
