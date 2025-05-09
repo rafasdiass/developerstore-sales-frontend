@@ -1,4 +1,5 @@
 // src/app/sale-form/sale-form.component.ts
+
 import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -22,7 +23,6 @@ import { DiscountResult } from '../models/discount.model';
   styleUrls: ['./sale-form.component.scss'],
 })
 export class SaleFormComponent implements OnInit {
-  readonly saleNumber = signal<string>('');
   readonly saleDate = signal<Date>(new Date());
   readonly customerId = signal<string>('');
   readonly customerName = signal<string>('');
@@ -39,7 +39,6 @@ export class SaleFormComponent implements OnInit {
 
   readonly canSubmit = computed(
     () =>
-      this.saleNumber().trim() !== '' &&
       this.customerId().trim() !== '' &&
       this.branchId().trim() !== '' &&
       this.items().length > 0 &&
@@ -74,7 +73,7 @@ export class SaleFormComponent implements OnInit {
     this.productsService.loadAll();
   }
 
-  // helpers para template
+  // Helpers para o template
   get branches() {
     return this.branchesService.list();
   }
@@ -82,7 +81,7 @@ export class SaleFormComponent implements OnInit {
     return this.customersService.list();
   }
 
-  /** adiciona linha em branco */
+  /** Adiciona linha em branco */
   addItem(): void {
     this.items.update((list) => [
       ...list,
@@ -97,32 +96,28 @@ export class SaleFormComponent implements OnInit {
     ]);
   }
 
-  /** remove linha */
+  /** Remove linha */
   removeItem(idx: number): void {
     this.items.update((list) => list.filter((_, i) => i !== idx));
   }
 
   /**
    * Mescla o partial vindo do filho e dispara o cálculo remoto.
-   * Atualiza o desconto e total ao receber o resultado,
-   * ou aplica fallback em caso de erro HTTP.
+   * Atualiza desconto e total ao receber resposta ou em fallback.
    */
   updateItem(event: {
     index: number;
     partial: Partial<CreateSaleItemCommand>;
   }): void {
-    // 1) mescla alterações no array
     this.items.update((list) => {
       const clone = [...list];
       Object.assign(clone[event.index], event.partial);
       return clone;
     });
 
-    // 2) dispara cálculo remoto
     const it = this.items()[event.index];
     this.discountsService.calculate(it.quantity, it.unitPrice).subscribe({
       next: (res: DiscountResult) => {
-        // **Corrigido**: calculamos totalItemAmount manualmente
         this.items.update((list) => {
           const clone = [...list];
           const base = clone[event.index];
@@ -130,7 +125,6 @@ export class SaleFormComponent implements OnInit {
             ...base,
             discount: res.discount,
             totalItemAmount:
-              // quantidade * preço unitário – desconto, arredondado a 2 casas
               Math.round(
                 (base.quantity * base.unitPrice - res.discount) * 100
               ) / 100,
@@ -139,7 +133,6 @@ export class SaleFormComponent implements OnInit {
         });
       },
       error: () => {
-        // fallback: sem desconto
         this.items.update((list) => {
           const clone = [...list];
           const base = clone[event.index];
@@ -154,14 +147,17 @@ export class SaleFormComponent implements OnInit {
       },
     });
   }
-  /** envia DTO final para a API */
+
+  /** Envia DTO final para a API */
   submit(): void {
-    if (!this.canSubmit()) return;
+    if (!this.canSubmit()) {
+      return;
+    }
     this.error.set(null);
     this.submitting.set(true);
 
     const cmd: CreateSaleCommand = {
-      saleNumber: this.saleNumber(),
+      // saleNumber é gerado pelo backend
       saleDate: this.saleDate(),
       customerId: this.customerId(),
       customerName: this.customerName(),
@@ -171,10 +167,6 @@ export class SaleFormComponent implements OnInit {
     };
 
     this.salesService.createSale(cmd);
-  }
-
-  onSaleNumberChange(value: string): void {
-    this.saleNumber.set(value);
   }
 
   onCustomerChange(id: string): void {

@@ -5,7 +5,7 @@ import { CreateSaleItemCommand } from './create-sale-item-command.model';
  */
 export interface CreateSaleCommand {
   /** Número identificador da venda */
-  saleNumber: string;
+  saleNumber?: string;
   /** Data e hora da venda */
   saleDate: Date;
   /** ID do cliente */

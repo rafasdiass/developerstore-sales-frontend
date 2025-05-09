@@ -1,11 +1,12 @@
+<!-- src/app/sale-form/sale-form.component.html -->
+
 <form (ngSubmit)="submit()" novalidate class="container py-4">
     <h2 class="mb-4">Nova Venda</h2>
 
-    <!-- Número da Venda -->
+    <!-- Data da Venda (preenchida com a data atual) -->
     <div class="mb-3">
-        <label for="saleNumber" class="form-label">Número da venda</label>
-        <input id="saleNumber" type="text" class="form-control" [value]="saleNumber()"
-            (input)="onSaleNumberChange($any($event.target).value)" />
+        <label for="saleDate" class="form-label">Data da venda</label>
+        <input id="saleDate" type="date" class="form-control" [value]="saleDate() | date:'yyyy-MM-dd'" readonly />
     </div>
 
     <!-- Seleção de Cliente e Filial -->
