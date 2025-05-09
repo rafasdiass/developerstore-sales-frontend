@@ -1,3 +1,4 @@
+// src/app/sale-form/sale-form.component.ts
 import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -21,19 +22,19 @@ import { DiscountResult } from '../models/discount.model';
   styleUrls: ['./sale-form.component.scss'],
 })
 export class SaleFormComponent implements OnInit {
-  readonly saleNumber = signal('');
-  readonly saleDate = signal(new Date());
-  readonly customerId = signal('');
-  readonly customerName = signal('');
-  readonly branchId = signal('');
-  readonly branchName = signal('');
+  readonly saleNumber = signal<string>('');
+  readonly saleDate = signal<Date>(new Date());
+  readonly customerId = signal<string>('');
+  readonly customerName = signal<string>('');
+  readonly branchId = signal<string>('');
+  readonly branchName = signal<string>('');
 
   /** itens já com discount e totalItemAmount */
   readonly items = signal<
     Array<CreateSaleItemCommand & { discount: number; totalItemAmount: number }>
   >([]);
 
-  readonly submitting = signal(false);
+  readonly submitting = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
   readonly canSubmit = computed(
@@ -53,7 +54,7 @@ export class SaleFormComponent implements OnInit {
     private discountsService: DiscountsService,
     private router: Router
   ) {
-    // quando terminar de submeter, redireciona ou mostra erro
+    // redireciona ou mostra erro depois de criar a venda
     effect(() => {
       if (this.submitting() && !this.salesService.loading()) {
         const err = this.salesService.error();
@@ -82,7 +83,7 @@ export class SaleFormComponent implements OnInit {
   }
 
   /** adiciona linha em branco */
-  addItem() {
+  addItem(): void {
     this.items.update((list) => [
       ...list,
       {
@@ -97,57 +98,60 @@ export class SaleFormComponent implements OnInit {
   }
 
   /** remove linha */
-  removeItem(idx: number) {
+  removeItem(idx: number): void {
     this.items.update((list) => list.filter((_, i) => i !== idx));
   }
 
   /**
-   * recebe do filho {index, partial}, aplica no array, chama backend p/ desconto e atualiza
+   * Mescla o partial vindo do filho e dispara o cálculo remoto.
+   * Atualiza o desconto e total ao receber o resultado,
+   * ou aplica fallback em caso de erro HTTP.
    */
   updateItem(event: {
     index: number;
     partial: Partial<CreateSaleItemCommand>;
-  }) {
-    // passo 1: funde partial
+  }): void {
+    // 1) mescla alterações no array
     this.items.update((list) => {
       const clone = [...list];
       Object.assign(clone[event.index], event.partial);
       return clone;
     });
 
-    // passo 2: disparar cálculo remoto
+    // 2) dispara cálculo remoto
     const it = this.items()[event.index];
     this.discountsService.calculate(it.quantity, it.unitPrice).subscribe({
       next: (res: DiscountResult) => {
+        // atualiza com os valores vindos do servidor
         this.items.update((list) => {
-          const c = [...list];
-          c[event.index] = {
-            ...c[event.index],
+          const clone = [...list];
+          clone[event.index] = {
+            ...clone[event.index],
             discount: res.discount,
             totalItemAmount: res.totalPrice,
           };
-          return c;
+          return clone;
         });
       },
       error: () => {
-        // em caso de erro, zera desconto e total = qty * unitPrice
+        // fallback: sem desconto, total = qty * unitPrice
         this.items.update((list) => {
-          const c = [...list];
-          const base = c[event.index];
-          c[event.index] = {
+          const clone = [...list];
+          const base = clone[event.index];
+          clone[event.index] = {
             ...base,
             discount: 0,
             totalItemAmount:
               Math.round(base.quantity * base.unitPrice * 100) / 100,
           };
-          return c;
+          return clone;
         });
       },
     });
   }
 
   /** envia DTO final para a API */
-  submit() {
+  submit(): void {
     if (!this.canSubmit()) return;
     this.error.set(null);
     this.submitting.set(true);
@@ -164,19 +168,18 @@ export class SaleFormComponent implements OnInit {
 
     this.salesService.createSale(cmd);
   }
- 
 
-  onSaleNumberChange(value: string) {
+  onSaleNumberChange(value: string): void {
     this.saleNumber.set(value);
   }
 
-  onCustomerChange(id: string) {
+  onCustomerChange(id: string): void {
     this.customerId.set(id);
     const c = this.customers.find((c) => c.id === id);
     this.customerName.set(c?.name ?? '');
   }
 
-  onBranchChange(id: string) {
+  onBranchChange(id: string): void {
     this.branchId.set(id);
     const b = this.branches.find((b) => b.id === id);
     this.branchName.set(b?.name ?? '');
