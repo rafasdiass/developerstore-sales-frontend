@@ -6,8 +6,8 @@
             <!-- Produto -->
             <div class="col-md-4">
                 <label class="form-label" for="product-{{ index }}">Produto</label>
-                <select id="product-{{ index }}" class="form-select" [value]="item.productId"
-                    (change)="onProductChange($event)">
+                <select id="product-{{ index }}" class="form-select" [(ngModel)]="item.productId"
+                    (ngModelChange)="onProductChange($event)">
                     <option value="">Selecione</option>
                     <option *ngFor="let p of productsService.products()" [value]="p.id">
                         {{ p.name }}
