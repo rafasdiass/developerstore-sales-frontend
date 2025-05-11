@@ -1,5 +1,9 @@
 <div class="container py-4">
-    <h2 class="mb-4">Detalhes da Venda</h2>
+    <h2 class="mb-4 d-flex align-items-center justify-content-between">
+        Detalhes da Venda
+
+       
+    </h2>
 
     <div *ngIf="error()" class="alert alert-danger d-flex align-items-center">
         <i class="bi bi-exclamation-circle me-2"></i>
@@ -19,6 +23,7 @@
                     {{ sale()?.isCancelled ? 'Cancelada' : 'Ativa' }}
                 </span>
             </h5>
+
             <p class="card-text">
                 <strong>Data:</strong> {{ sale()?.saleDate | date: 'short' }}<br />
                 <strong>Cliente:</strong> {{ sale()?.customerName }}<br />
@@ -28,6 +33,7 @@
 
             <hr />
             <h6>Itens da Venda</h6>
+
             <table class="table table-bordered table-sm mt-2">
                 <thead class="table-light">
                     <tr>
@@ -57,3 +63,4 @@
         </div>
     </div>
 </div>
+  

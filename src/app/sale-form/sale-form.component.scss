@@ -1,95 +1,154 @@
 form {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    background-color: #fafafa;
-    border-radius: 8px;
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    h2 {
+        font-size: 1.75rem;
+        margin-bottom: 2rem;
+        color: #343a40;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        button {
+            font-size: 0.875rem;
+        }
+    }
 
     label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #495057;
         display: block;
-        font-weight: bold;
-        margin-bottom: 0.25rem;
-        color: #333;
     }
 
     input,
     select {
         width: 100%;
-        padding: 0.5rem;
+        padding: 0.55rem 0.75rem;
         font-size: 1rem;
-        margin-bottom: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        margin-bottom: 1.25rem;
+        transition: border-color 0.2s;
+
+        &:focus {
+            border-color: #80bdff;
+            outline: none;
+        }
 
         &:disabled {
-            background-color: #eee;
+            background-color: #e9ecef;
         }
     }
 
-    fieldset {
-        margin-bottom: 1.5rem;
-        padding: 1rem;
-        border: 1px solid #ddd;
+    hr {
+        border-top: 1px solid #dee2e6;
+        margin: 2rem 0;
+    }
+
+    .alert {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
         border-radius: 4px;
-        background-color: #fff;
-
-        legend {
-            font-weight: bold;
-            padding: 0 0.5rem;
-        }
-
-        button {
-            margin-top: 0.5rem;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-
-            &:hover {
-                background-color: #c82333;
-            }
-        }
     }
 
-    button[type='button'] {
-        background-color: #007bff;
-        color: white;
-        border: none;
+    .form-label {
+        font-size: 0.95rem;
+    }
+
+    .btn {
+        font-size: 0.95rem;
         padding: 0.5rem 1rem;
-        margin-top: 1rem;
-        border-radius: 4px;
-        cursor: pointer;
+        border-radius: 5px;
+
+        i {
+            margin-right: 0.4rem;
+        }
+    }
+
+    .btn-outline-primary {
+        border-color: #0d6efd;
+        color: #0d6efd;
 
         &:hover {
-            background-color: #0056b3;
+            background-color: #0d6efd;
+            color: #fff;
         }
     }
 
-    button[type='submit'] {
-        background-color: #28a745;
-        color: white;
-        padding: 0.75rem 1.25rem;
-        font-size: 1rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-top: 1rem;
+    .btn-outline-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+
+        &:hover {
+            background-color: #dc3545;
+            color: #fff;
+        }
+    }
+
+    .btn-outline-secondary {
+        border-color: #6c757d;
+        color: #6c757d;
+
+        &:hover {
+            background-color: #6c757d;
+            color: #fff;
+        }
+    }
+
+    .btn-primary {
+        background-color: #198754;
+        border-color: #198754;
+
+        &:hover {
+            background-color: #157347;
+        }
 
         &:disabled {
-            background-color: #ccc;
+            background-color: #adb5bd;
+            border-color: #adb5bd;
             cursor: not-allowed;
-        }
-
-        &:not(:disabled):hover {
-            background-color: #218838;
         }
     }
 
-    div[ng-reflect-ng-if] {
-        color: red;
-        margin-top: 1rem;
+    .border {
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .table-summary {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 1rem;
+    }
+
+    // item repeat
+    .sale-item {
+        background-color: #fefefe;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .text-end {
+        text-align: right;
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+    }
+
+    .text-success {
+        color: #198754 !important;
     }
 }

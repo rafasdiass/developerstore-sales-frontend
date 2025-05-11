@@ -24,6 +24,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: ':id/edit', 
+        loadComponent: () =>
+          import('./sale-form/sale-form.component').then(
+            (c) => c.SaleFormComponent
+          ),
+      },
+      {
         path: ':id',
         loadComponent: () =>
           import('./sale-detail/sale-detail.component').then(
@@ -65,3 +72,4 @@ export const routes: Routes = [
   { path: '', redirectTo: 'sales', pathMatch: 'full' },
   { path: '**', redirectTo: 'sales' },
 ];
+

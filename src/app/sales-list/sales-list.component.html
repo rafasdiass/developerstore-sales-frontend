@@ -49,6 +49,11 @@
                     <button class="btn btn-sm btn-outline-danger" (click)="deleteSale(s.id)" title="Excluir venda">
                         <i class="bi bi-trash"></i>
                     </button>
+                    <!-- Exemplo dentro do *ngFor de uma tabela -->
+                    <button class="btn btn-sm btn-outline-primary" (click)="goToEdit(s.id)">
+                        <i class="bi bi-pencil-square"></i> Editar
+                    </button>
+  
                 </td>
             </tr>
         </tbody>

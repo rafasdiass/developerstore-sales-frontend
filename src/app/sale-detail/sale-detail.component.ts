@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { signal, effect } from '@angular/core';
 import { SalesService } from '../services/sales.service';
 import { Sale } from '../models/sale.model';
@@ -19,11 +19,14 @@ export class SaleDetailComponent {
 
   constructor(
     private readonly route: ActivatedRoute,
+    private readonly router: Router,
     private readonly salesService: SalesService
   ) {
-    // efeito reativo para carregar a venda ao montar
     effect(() => {
-      this.loadSale();
+      const isEditPath = this.router.url.includes('/edit');
+      if (!isEditPath) {
+        this.loadSale();
+      }
     });
   }
 
@@ -51,6 +54,12 @@ export class SaleDetailComponent {
       this.error.set('Erro ao carregar detalhes');
     } finally {
       this.loading.set(false);
+    }
+  }
+  goToEdit(): void {
+    const current = this.sale();
+    if (current?.id) {
+      this.router.navigate(['/sales', current.id, 'edit']);
     }
   }
 }

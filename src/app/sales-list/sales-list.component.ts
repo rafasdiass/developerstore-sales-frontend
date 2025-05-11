@@ -2,21 +2,20 @@
 
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { effect } from '@angular/core';
 import { SalesService } from '../services/sales.service';
-
+import { Sale } from '../models/sale.model';
 
 @Component({
   selector: 'app-sales-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ],
+  imports: [CommonModule, RouterLink],
   templateUrl: './sales-list.component.html',
   styleUrls: ['./sales-list.component.scss'],
 })
 export class SalesListComponent {
-  constructor(private salesService: SalesService) {
-    // opcional: log de erros quando mudarem
+  constructor(private salesService: SalesService, private router: Router) {
     effect(() => {
       const err = this.error;
       if (err) {
@@ -25,7 +24,6 @@ export class SalesListComponent {
     });
   }
 
-  // getters leem os signals do serviço — sem uso de property initializers
   get sales() {
     return this.salesService.sales();
   }
@@ -42,5 +40,9 @@ export class SalesListComponent {
   deleteSale(id: string): void {
     if (!confirm('Confirma exclusão desta venda?')) return;
     this.salesService.deleteSale(id);
+  }
+
+  goToEdit(id: string): void {
+    this.router.navigate(['/sales', id, 'edit']);
   }
 }

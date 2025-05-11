@@ -1,5 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+// src/app/sale-form/sale-form.component.ts
+
+import { Component, OnInit, computed, signal } from '@angular/core';
+import {
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BranchesService } from '../services/branches.service';
 import { CustomersService } from '../services/customers.service';
@@ -11,12 +19,14 @@ import { DiscountResult } from '../models/discount.model';
 import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
 import { UpdateSaleCommand } from '../models/update-sale-command.model';
 import { CommonModule } from '@angular/common';
+import Swal from 'sweetalert2';
+
 
 @Component({
   selector: 'app-sale-form',
   templateUrl: './sale-form.component.html',
   styleUrls: ['./sale-form.component.scss'],
-  imports: [CommonModule,ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   standalone: true,
 })
 export class SaleFormComponent implements OnInit {
@@ -27,6 +37,10 @@ export class SaleFormComponent implements OnInit {
 
   get items(): FormArray {
     return this.form.get('items') as FormArray;
+  }
+
+  get pageTitle(): string {
+    return this.isEditMode ? 'Editar Venda' : 'Nova Venda';
   }
 
   constructor(
@@ -54,17 +68,29 @@ export class SaleFormComponent implements OnInit {
     this.branchesService.loadAll();
     this.productsService.loadAll();
 
-    this.saleId = this.route.snapshot.paramMap.get('id');
-    this.isEditMode = !!this.saleId;
+    this.route.paramMap.subscribe(async (params) => {
+      const id = params.get('id');
+      if (id) {
+        this.isEditMode = true;
+        this.saleId = id;
 
-    if (this.isEditMode && this.saleId) {
-      this.salesService.getById(this.saleId).then((sale) => {
-        if (sale) this.populateForm(sale);
-        else this.error = 'Venda não encontrada.';
-      });
-    } else {
-      this.addItem(); // adiciona pelo menos um item ao iniciar
-    }
+        try {
+          const sale = await this.salesService.getById(id);
+          if (!sale) {
+            this.error = 'Venda não encontrada.';
+            return;
+          }
+          this.populateForm(sale);
+        } catch (err) {
+          console.error('Erro ao buscar venda para edição:', err);
+          this.error = 'Erro ao carregar venda para edição.';
+        }
+      } else {
+        this.isEditMode = false;
+        this.saleId = null;
+        this.addItem(); // criação
+      }
+    });
   }
 
   addItem(): void {
@@ -161,12 +187,10 @@ export class SaleFormComponent implements OnInit {
       );
     });
   }
-
   submit(): void {
     if (this.form.invalid) return;
 
     const dto = this.form.value;
-
     const payload = {
       saleDate: dto.saleDate,
       customerId: dto.customerId,
@@ -189,7 +213,17 @@ export class SaleFormComponent implements OnInit {
 
       this.salesService
         .updateSale(this.saleId, update)
-        .then(() => this.router.navigate(['/sales']))
+        .then(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Venda atualizada!',
+            text: 'A venda foi atualizada com sucesso.',
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            background: '#f8f9fa',
+          }).then(() => this.router.navigate(['/sales']));
+        })
         .catch((err) => {
           this.error = 'Erro ao atualizar a venda.';
           console.error(err);
@@ -197,11 +231,25 @@ export class SaleFormComponent implements OnInit {
     } else {
       this.salesService
         .createSale(payload)
-        .then(() => this.router.navigate(['/sales']))
+        .then(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Venda criada!',
+            text: 'A nova venda foi registrada com sucesso.',
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            background: '#f8f9fa',
+          }).then(() => this.router.navigate(['/sales']));
+        })
         .catch((err) => {
           this.error = 'Erro ao criar a venda.';
           console.error(err);
         });
     }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/sales']);
   }
 }
