@@ -1,59 +1,125 @@
-# SalesApp
+# 🧾 DeveloperStore - Frontend Angular
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.0.
+Frontend moderno e modular para gerenciamento de vendas da **DeveloperStore**, desenvolvido com **Angular standalone components**, **Reactive Forms**, **Bootstrap Icons**, **SweetAlert2** e integração total com a API RESTful do backend.
 
-## Development server
+> 🔄 Projeto focado em produtividade, escalabilidade e clean code!
 
-To start a local development server, run:
+## 📚 Sumário
+
+- [🧾 DeveloperStore - Frontend Angular](#-developerstore---frontend-angular)
+  - [📚 Sumário](#-sumário)
+  - [🛠 Tecnologias Utilizadas](#-tecnologias-utilizadas)
+  - [✅ Principais Funcionalidades](#-principais-funcionalidades)
+  - [🧱 Arquitetura do Projeto](#-arquitetura-do-projeto)
+  - [▶️ Como Executar](#️-como-executar)
+    - [Pré-requisitos](#pré-requisitos)
+    - [Instalação](#instalação)
+    - [Executar em desenvolvimento](#executar-em-desenvolvimento)
+  - [📂 Estrutura de Pastas](#-estrutura-de-pastas)
+  - [♻️ Padrões e Convenções](#️-padrões-e-convenções)
+  - [👨‍💻 Autor](#-autor)
+
+---
+
+## 🛠 Tecnologias Utilizadas
+
+- [Angular CLI 17+](https://angular.io/)
+- [Bootstrap 5](https://getbootstrap.com/)
+- [Bootstrap Icons](https://icons.getbootstrap.com/)
+- [SweetAlert2](https://sweetalert2.github.io/)
+- TypeScript + Signals API
+- Reactive Forms
+- Angular Standalone Components
+- Lazy loading por rota
+- Estrutura baseada em Services, Domain Models e Componentes
+
+---
+
+## ✅ Principais Funcionalidades
+
+- 📋 Listagem de vendas com ações de visualizar, editar e excluir
+- 🆕 Cadastro de nova venda com validação reativa
+- ✏️ Edição completa de vendas existentes (via rota `/sales/:id/edit`)
+- 📄 Visualização de detalhes da venda (`/sales/:id`)
+- ⚠️ Confirmação e feedback com SweetAlert2
+- 🎯 Recalculo automático de descontos por quantidade
+- 🔢 Totalização de itens com base em regras de negócio
+- 🧠 Uso de Signals e `@computed` para estados derivados
+
+---
+
+## 🧱 Arquitetura do Projeto
+
+```text
+/src
+├── app
+│   ├── services/                 # Serviços centralizados por entidade (Sales, Products, Customers etc)
+│   ├── models/                   # Models e DTOs usados nos formulários e integração com API
+│   ├── sale-form/               # Formulário principal (criação e edição de venda)
+│   ├── sales-list/              # Listagem de vendas
+│   ├── sale-detail/             # Detalhes da venda
+│   ├── layout-sales/            # Componente de layout para rotas de vendas
+│   └── app.routes.ts            # Arquivo de rotas standalone
+```
+
+---
+
+## ▶️ Como Executar
+
+### Pré-requisitos
+
+* Node.js 18+
+* Angular CLI 17+
+* Backend rodando em `http://localhost:5211/api`
+
+### Instalação
+
+```bash
+npm install
+```
+
+### Executar em desenvolvimento
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Acesse em:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```text
+http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## 📂 Estrutura de Pastas
 
-## Building
+* `sale-form`: gerenciamento completo da venda com formulário reativo, desconto automático e modo de edição
+* `sales-list`: tabela responsiva com ações e ícones Bootstrap
+* `sale-detail`: exibição elegante de detalhes de venda com botão de edição e voltar
+* `services`: serviços organizados com `signals`, consumo da API REST e encapsulamento da lógica de estado
+* `models`: DTOs bem tipados usados por comandos e entidades do frontend
 
-To build the project run:
+---
 
-```bash
-ng build
-```
+## ♻️ Padrões e Convenções
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+* 🔁 Comunicação via serviços com Signals (`WritableSignal`, `computed`)
+* ✅ Validação reativa (formControlName)
+* 💡 Código organizado por responsabilidade (SRP, SOLID)
+* 📦 Separação clara entre layout, componentes e lógica
+* 🧼 Clean Code com nomes descritivos e ausência de lógica no template
 
-## Running unit tests
+---
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## 👨‍💻 Autor
 
-```bash
-ng test
-```
+Desenvolvido por **Rafael de Souza Dias**
 
-## Running end-to-end tests
+* GitHub: [rafasdiass](https://github.com/rafasdiass)
+* E-mail: [rafasdiasdev@gmail.com](mailto:rafasdiasdev@gmail.com)
+* LinkedIn: [linkedin.com/in/rdrafaeldias](https://www.linkedin.com/in/rdrafaeldias/)
 
-For end-to-end (e2e) testing, run:
+---
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+📌 *Este projeto é parte do sistema DeveloperStore, criado com o objetivo de demonstrar práticas modernas de desenvolvimento frontend.*
