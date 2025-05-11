@@ -73,4 +73,20 @@ export class ApiService {
       'Content-Type': 'application/json',
     });
   }
+  /**
+   * PATCH /api/{resource}/{id}
+   */
+  patch<TRequest, TResponse = void>(
+    resource: string,
+    id: string,
+    body: TRequest
+  ): Observable<TResponse> {
+    return this.http.patch<TResponse>(
+      `${this.baseUrl}/${resource}/${id}`,
+      body,
+      {
+        headers: this.defaultHeaders(),
+      }
+    );
+  }
 }

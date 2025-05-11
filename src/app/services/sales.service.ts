@@ -2,23 +2,20 @@ import { Injectable, signal, computed, effect } from '@angular/core';
 import { ApiService } from './api.service';
 import { Sale } from '../models/sale.model';
 import { CreateSaleCommand } from '../models/create-sale-command.model';
+import { UpdateSaleCommand } from '../models/update-sale-command.model';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SalesService {
   private readonly resource = 'sales';
 
-  // ─── Estado interno ──────────────────────────────────────────────
   private readonly _sales = signal<Sale[]>([]);
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
 
-  // ─── Exposição pública ───────────────────────────────────────────
   readonly sales = this._sales.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
-
-  // ─── Flag computada ──────────────────────────────────────────────
   readonly hasSales = computed(
     () => !this.loading() && this.sales().length > 0
   );
@@ -29,7 +26,6 @@ export class SalesService {
     });
   }
 
-  // ─── Busca todas as vendas ───────────────────────────────────────
   async loadAll(): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
@@ -46,7 +42,6 @@ export class SalesService {
     }
   }
 
-  // ─── Cria nova venda ─────────────────────────────────────────────
   async createSale(command: CreateSaleCommand): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
@@ -58,7 +53,7 @@ export class SalesService {
           command
         )
       );
-      await this.loadAll(); // Atualiza lista após criação
+      await this.loadAll();
     } catch (err) {
       console.error('Falha ao criar venda:', err);
       this._error.set('Falha ao criar venda');
@@ -67,7 +62,23 @@ export class SalesService {
     }
   }
 
-  // ─── Deleta venda por ID ─────────────────────────────────────────
+  async updateSale(id: string, command: UpdateSaleCommand): Promise<void> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      await firstValueFrom(
+        this.api.patch<UpdateSaleCommand, void>(this.resource, id, command)
+      );
+      await this.loadAll(); // recarrega a lista após atualização
+    } catch (err) {
+      console.error('Falha ao atualizar venda:', err);
+      this._error.set('Falha ao atualizar venda');
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
   async deleteSale(id: string): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
@@ -83,7 +94,6 @@ export class SalesService {
     }
   }
 
-  // ─── Busca venda por ID ──────────────────────────────────────────
   async getById(id: string): Promise<Sale | null> {
     this._error.set(null);
 
