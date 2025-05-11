@@ -1,58 +1,106 @@
-<!-- src/app/sale-form/sale-form.component.html -->
+<form [formGroup]="form" (ngSubmit)="submit()" class="container py-4" novalidate>
+    <h2 class="mb-4">
+        {{ isEditMode ? 'Editar Venda' : 'Nova Venda' }}
+    </h2>
 
-<form (ngSubmit)="submit()" novalidate class="container py-4">
-    <h2 class="mb-4">Nova Venda</h2>
-
-    <!-- Data da Venda (preenchida com a data atual) -->
+    <!-- Data da Venda -->
     <div class="mb-3">
-        <label for="saleDate" class="form-label">Data da venda</label>
-        <input id="saleDate" type="date" class="form-control" [value]="saleDate() | date:'yyyy-MM-dd'" readonly />
+        <label for="saleDate" class="form-label">Data da Venda</label>
+        <input id="saleDate" type="date" class="form-control" formControlName="saleDate" />
     </div>
 
-    <!-- Seleção de Cliente e Filial -->
+    <!-- Cliente e Filial -->
     <div class="row mb-3">
         <div class="col-md-6">
-            <label for="customer" class="form-label">Cliente</label>
-            <select id="customer" class="form-select" [value]="customerId()"
-                (change)="onCustomerChange($any($event.target).value)">
+            <label for="customerId" class="form-label">Cliente</label>
+            <select id="customerId" class="form-select" formControlName="customerId" (change)="onCustomerChange()">
                 <option value="">Selecione</option>
-                <option *ngFor="let c of customers" [value]="c.id">
+                <option *ngFor="let c of customersService.list()" [value]="c.id">
                     {{ c.name }}
                 </option>
             </select>
         </div>
+
         <div class="col-md-6">
-            <label for="branch" class="form-label">Filial</label>
-            <select id="branch" class="form-select" [value]="branchId()"
-                (change)="onBranchChange($any($event.target).value)">
+            <label for="branchId" class="form-label">Filial</label>
+            <select id="branchId" class="form-select" formControlName="branchId" (change)="onBranchChange()">
                 <option value="">Selecione</option>
-                <option *ngFor="let b of branches" [value]="b.id">
+                <option *ngFor="let b of branchesService.list()" [value]="b.id">
                     {{ b.name }}
                 </option>
             </select>
         </div>
     </div>
 
+    <!-- Campos ocultos para nomes (preenchidos via JS) -->
+    <input type="hidden" formControlName="customerName" />
+    <input type="hidden" formControlName="branchName" />
+
     <hr class="my-4" />
     <h5>Itens da Venda</h5>
 
-    <!-- Lista de itens -->
-    <div *ngFor="let it of items(); let i = index" class="mb-3">
-        <app-sale-item-form [index]="i" [item]="it" (update)="updateItem($event)"
-            (remove)="removeItem($event)"></app-sale-item-form>
+    <div formArrayName="items">
+        <div *ngFor="let item of items.controls; let i = index" [formGroupName]="i" class="mb-4 border rounded p-3">
+            <!-- Produto -->
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Produto</label>
+                    <select class="form-select" formControlName="productId" (change)="onProductChange(i)">
+                        <option value="">Selecione</option>
+                        <option *ngFor="let p of productsService.products()" [value]="p.id">
+                            {{ p.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Preço Unitário</label>
+                    <input class="form-control" type="number" formControlName="unitPrice" readonly />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantidade</label>
+                    <input class="form-control" type="number" formControlName="quantity" min="1"
+                        (change)="recalculate(i)" />
+                </div>
+            </div>
+
+            <!-- Desconto e Total -->
+            <div class="row mb-2">
+                <div class="col-md-3">
+                    <label class="form-label">Desconto</label>
+                    <input class="form-control" formControlName="discount" readonly />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Total</label>
+                    <input class="form-control" formControlName="totalItemAmount" readonly />
+                </div>
+                <div class="col-md-6 text-end align-self-end mt-3">
+                    <button type="button" class="btn btn-outline-danger" (click)="removeItem(i)">
+                        <i class="bi bi-trash"></i> Remover
+                    </button>
+                </div>
+            </div>
+
+            <!-- Nome do produto oculto -->
+            <input type="hidden" formControlName="productName" />
+        </div>
     </div>
 
+    <!-- Adicionar item -->
     <div class="mb-3 text-end">
-        <button type="button" class="btn btn-outline-secondary" (click)="addItem()">
+        <button type="button" class="btn btn-outline-primary" (click)="addItem()">
             <i class="bi bi-plus-circle me-1"></i> Adicionar Item
         </button>
     </div>
 
-    <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
+    <!-- Erros -->
+    <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+    </div>
 
+    <!-- Botão de envio -->
     <div class="text-end">
-        <button type="submit" class="btn btn-primary" [disabled]="!canSubmit() || submitting()">
-            <i class="bi bi-save me-1"></i> Salvar Venda
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Atualizar' : 'Salvar' }}
         </button>
     </div>
 </form>

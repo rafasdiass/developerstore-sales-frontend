@@ -1,183 +1,207 @@
-// src/app/sale-form/sale-form.component.ts
-
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { SaleItemFormComponent } from '../sale-item-form/sale-item-form.component';
-
-import { SalesService } from '../services/sales.service';
+import { Component, OnInit } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BranchesService } from '../services/branches.service';
 import { CustomersService } from '../services/customers.service';
 import { DiscountsService } from '../services/discounts.service';
 import { ProductsService } from '../services/product.service';
-
-import { CreateSaleCommand } from '../models/create-sale-command.model';
-import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
+import { SalesService } from '../services/sales.service';
+import { Sale } from '../models/sale.model';
 import { DiscountResult } from '../models/discount.model';
+import { CreateSaleItemCommand } from '../models/create-sale-item-command.model';
+import { UpdateSaleCommand } from '../models/update-sale-command.model';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-sale-form',
-  standalone: true,
-  imports: [CommonModule, SaleItemFormComponent],
   templateUrl: './sale-form.component.html',
   styleUrls: ['./sale-form.component.scss'],
+  imports: [CommonModule,ReactiveFormsModule],
+  standalone: true,
 })
 export class SaleFormComponent implements OnInit {
-  readonly saleDate = signal<Date>(new Date());
-  readonly customerId = signal<string>('');
-  readonly customerName = signal<string>('');
-  readonly branchId = signal<string>('');
-  readonly branchName = signal<string>('');
+  form!: FormGroup;
+  error: string | null = null;
+  isEditMode = false;
+  saleId: string | null = null;
 
-  /** itens já com discount e totalItemAmount */
-  readonly items = signal<
-    Array<CreateSaleItemCommand & { discount: number; totalItemAmount: number }>
-  >([]);
-
-  readonly submitting = signal<boolean>(false);
-  readonly error = signal<string | null>(null);
-
-  readonly canSubmit = computed(
-    () =>
-      this.customerId().trim() !== '' &&
-      this.branchId().trim() !== '' &&
-      this.items().length > 0 &&
-      this.items().every((it) => it.productId && it.quantity > 0)
-  );
+  get items(): FormArray {
+    return this.form.get('items') as FormArray;
+  }
 
   constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
     private salesService: SalesService,
-    private branchesService: BranchesService,
-    private customersService: CustomersService,
-    private productsService: ProductsService,
-    private discountsService: DiscountsService,
-    private router: Router
-  ) {
-    // redireciona ou mostra erro depois de criar a venda
-    effect(() => {
-      if (this.submitting() && !this.salesService.loading()) {
-        const err = this.salesService.error();
-        if (err) {
-          this.error.set(err);
-          this.submitting.set(false);
-        } else {
-          this.router.navigate(['/sales']);
-        }
-      }
-    });
-  }
+    public customersService: CustomersService,
+    public branchesService: BranchesService,
+    public productsService: ProductsService,
+    private discountsService: DiscountsService
+  ) {}
 
   ngOnInit(): void {
-    this.branchesService.loadAll();
-    this.customersService.loadAll();
-    this.productsService.loadAll();
-  }
-
-  // Helpers para o template
-  get branches() {
-    return this.branchesService.list();
-  }
-  get customers() {
-    return this.customersService.list();
-  }
-
-  /** Adiciona linha em branco */
-  addItem(): void {
-    this.items.update((list) => [
-      ...list,
-      {
-        productId: '',
-        productName: '',
-        quantity: 1,
-        unitPrice: 0,
-        discount: 0,
-        totalItemAmount: 0,
-      },
-    ]);
-  }
-
-  /** Remove linha */
-  removeItem(idx: number): void {
-    this.items.update((list) => list.filter((_, i) => i !== idx));
-  }
-
-  /**
-   * Mescla o partial vindo do filho e dispara o cálculo remoto.
-   * Atualiza desconto e total ao receber resposta ou em fallback.
-   */
-  updateItem(event: {
-    index: number;
-    partial: Partial<CreateSaleItemCommand>;
-  }): void {
-    this.items.update((list) => {
-      const clone = [...list];
-      Object.assign(clone[event.index], event.partial);
-      return clone;
+    this.form = this.fb.group({
+      saleDate: [new Date(), Validators.required],
+      customerId: ['', Validators.required],
+      customerName: ['', Validators.required],
+      branchId: ['', Validators.required],
+      branchName: ['', Validators.required],
+      items: this.fb.array([]),
     });
 
-    const it = this.items()[event.index];
-    this.discountsService.calculate(it.quantity, it.unitPrice).subscribe({
-      next: (res: DiscountResult) => {
-        this.items.update((list) => {
-          const clone = [...list];
-          const base = clone[event.index];
-          clone[event.index] = {
-            ...base,
+    this.customersService.loadAll();
+    this.branchesService.loadAll();
+    this.productsService.loadAll();
+
+    this.saleId = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!this.saleId;
+
+    if (this.isEditMode && this.saleId) {
+      this.salesService.getById(this.saleId).then((sale) => {
+        if (sale) this.populateForm(sale);
+        else this.error = 'Venda não encontrada.';
+      });
+    } else {
+      this.addItem(); // adiciona pelo menos um item ao iniciar
+    }
+  }
+
+  addItem(): void {
+    const itemGroup = this.fb.group({
+      productId: ['', Validators.required],
+      productName: ['', Validators.required],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unitPrice: [0, [Validators.required, Validators.min(0)]],
+      discount: [0],
+      totalItemAmount: [0],
+      isCancelled: [false],
+    });
+
+    this.items.push(itemGroup);
+  }
+
+  removeItem(index: number): void {
+    this.items.removeAt(index);
+  }
+
+  onProductChange(index: number): void {
+    const item = this.items.at(index);
+    const productId = item.get('productId')?.value;
+    const product = this.productsService
+      .products()
+      .find((p) => p.id === productId);
+
+    item.patchValue({
+      productName: product?.name ?? '',
+      unitPrice: product?.price ?? 0,
+    });
+
+    this.recalculate(index);
+  }
+
+  onCustomerChange(): void {
+    const id = this.form.get('customerId')?.value;
+    const customer = this.customersService.list().find((c) => c.id === id);
+    this.form.get('customerName')?.setValue(customer?.name ?? '');
+  }
+
+  onBranchChange(): void {
+    const id = this.form.get('branchId')?.value;
+    const branch = this.branchesService.list().find((b) => b.id === id);
+    this.form.get('branchName')?.setValue(branch?.name ?? '');
+  }
+
+  recalculate(index: number): void {
+    const item = this.items.at(index);
+    const quantity = item.get('quantity')?.value;
+    const price = item.get('unitPrice')?.value;
+
+    if (quantity > 0 && price > 0) {
+      this.discountsService.calculate(quantity, price).subscribe({
+        next: (res: DiscountResult) => {
+          item.patchValue({
             discount: res.discount,
             totalItemAmount:
-              Math.round(
-                (base.quantity * base.unitPrice - res.discount) * 100
-              ) / 100,
-          };
-          return clone;
-        });
-      },
-      error: () => {
-        this.items.update((list) => {
-          const clone = [...list];
-          const base = clone[event.index];
-          clone[event.index] = {
-            ...base,
+              Math.round((quantity * price - res.discount) * 100) / 100,
+          });
+        },
+        error: () => {
+          item.patchValue({
             discount: 0,
-            totalItemAmount:
-              Math.round(base.quantity * base.unitPrice * 100) / 100,
-          };
-          return clone;
-        });
-      },
+            totalItemAmount: Math.round(quantity * price * 100) / 100,
+          });
+        },
+      });
+    } else {
+      item.patchValue({ discount: 0, totalItemAmount: 0 });
+    }
+  }
+
+  populateForm(sale: Sale): void {
+    this.form.patchValue({
+      saleDate: sale.saleDate,
+      customerId: sale.customerId,
+      customerName: sale.customerName,
+      branchId: sale.branchId,
+      branchName: sale.branchName,
+    });
+
+    sale.items.forEach((item) => {
+      this.items.push(
+        this.fb.group({
+          productId: [item.productId, Validators.required],
+          productName: [item.productName, Validators.required],
+          quantity: [item.quantity, [Validators.required, Validators.min(1)]],
+          unitPrice: [item.unitPrice, [Validators.required, Validators.min(0)]],
+          discount: [item.discount],
+          totalItemAmount: [item.totalItemAmount],
+          isCancelled: [item.isCancelled],
+        })
+      );
     });
   }
 
-  /** Envia DTO final para a API */
   submit(): void {
-    if (!this.canSubmit()) {
-      return;
-    }
-    this.error.set(null);
-    this.submitting.set(true);
+    if (this.form.invalid) return;
 
-    const cmd: CreateSaleCommand = {
-      // saleNumber é gerado pelo backend
-      saleDate: this.saleDate(),
-      customerId: this.customerId(),
-      customerName: this.customerName(),
-      branchId: this.branchId(),
-      branchName: this.branchName(),
-      items: this.items(),
+    const dto = this.form.value;
+
+    const payload = {
+      saleDate: dto.saleDate,
+      customerId: dto.customerId,
+      customerName: dto.customerName,
+      branchId: dto.branchId,
+      branchName: dto.branchName,
+      items: dto.items.map((it: CreateSaleItemCommand) => ({
+        productId: it.productId,
+        productName: it.productName,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+      })),
     };
 
-    this.salesService.createSale(cmd);
-  }
+    if (this.isEditMode && this.saleId) {
+      const update: UpdateSaleCommand = {
+        id: this.saleId,
+        ...payload,
+      };
 
-  onCustomerChange(id: string): void {
-    this.customerId.set(id);
-    const c = this.customers.find((c) => c.id === id);
-    this.customerName.set(c?.name ?? '');
-  }
-
-  onBranchChange(id: string): void {
-    this.branchId.set(id);
-    const b = this.branches.find((b) => b.id === id);
-    this.branchName.set(b?.name ?? '');
+      this.salesService
+        .updateSale(this.saleId, update)
+        .then(() => this.router.navigate(['/sales']))
+        .catch((err) => {
+          this.error = 'Erro ao atualizar a venda.';
+          console.error(err);
+        });
+    } else {
+      this.salesService
+        .createSale(payload)
+        .then(() => this.router.navigate(['/sales']))
+        .catch((err) => {
+          this.error = 'Erro ao criar a venda.';
+          console.error(err);
+        });
+    }
   }
 }
