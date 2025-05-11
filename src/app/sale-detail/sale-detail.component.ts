@@ -62,4 +62,7 @@ export class SaleDetailComponent {
       this.router.navigate(['/sales', current.id, 'edit']);
     }
   }
+  goBack(): void {
+    this.router.navigate(['/sales']);
+  }
 }
